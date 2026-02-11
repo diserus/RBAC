@@ -2,14 +2,23 @@
 // нажмите на значок <icon src="AllIcons.Actions.Execute"/> в поле.
 public class Main {
     public static void main(String[] args) {
-        //TIP Нажмите <shortcut actionId="ShowIntentionActions"/>, когда курсор находится на выделенном тексте
-        // чтобы увидеть, как OpenIDE предлагает это исправить.
-        System.out.printf("Hello and welcome!");
-
-        for (int i = 1; i <= 5; i++) {
-            //TIP Нажмите <shortcut actionId="Debug"/>, чтобы начать отладку вашего кода. Мы установили одну <icon src="AllIcons.Debugger.Db_set_breakpoint"/> точку останова
-            // для вас, но вы всегда можете добавить больше, нажав <shortcut actionId="ToggleLineBreakpoint"/>.
-            System.out.println("i = " + i);
+        try {
+            User user1 = User.validate("d1ser", "Konstantin Prozorenko", "prozorenko24@gmail.com");
+            System.out.println("Тест 1 (валидный пользователь): " + user1.format());
+        } catch (Exception e) {
+            System.err.println("Тест 1 провален: " + e.getMessage());
+        }
+        try {
+            User user1 = User.validate("d1ser", "Konstantin Prozorenko", "prozorenkogmail.com");
+            System.out.println("Тест 2 (инвалидный email): " + user1.format());
+        } catch (Exception e) {
+            System.err.println("Тест 2 провален: " + e.getMessage());
+        }
+        try {
+            User user1 = User.validate("dd", "Konstantin Prozorenko", "prozorenko24@gmail.com");
+            System.out.println("Тест 3 (инвалидное имя пользователя): " + user1.format());
+        } catch (Exception e) {
+            System.err.println("Тест 3 провален: " + e.getMessage());
         }
     }
 }
