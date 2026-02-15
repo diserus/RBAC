@@ -18,4 +18,14 @@ public record Permission(String name, String resource, String description) {
         }
         description = description.trim();
     }
+    public String format() {
+        return String.format("%s on %s: %s", name, resource, description);
+    }
+    public boolean matches(String namePattern, String resourcePattern) {
+        boolean nameMatches = (namePattern == null) || this.name.contains(namePattern.toUpperCase());
+        boolean resourceMatches = (resourcePattern == null) || this.resource.contains(resourcePattern.toLowerCase());
+
+        return nameMatches && resourceMatches;
+    }
 }
+
