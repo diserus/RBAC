@@ -1,5 +1,3 @@
-import java.sql.SQLOutput;
-
 public class Main {
     public static void main(String[] args) {
         System.out.println("--- ТЕСТЫ ДЛЯ USER ---");
@@ -10,6 +8,9 @@ public class Main {
 
         System.out.println("\n--- ТЕСТЫ ДЛЯ ROLE ---");
         testRole();
+
+        System.out.println("\n--- ТЕСТЫ ДЛЯ AssignmentMetadata ---");
+        testAssignmentMetadata();
     }
 
     private static void testUser() {
@@ -95,5 +96,32 @@ public class Main {
         Role admin2 = new Role("Administrator2", "Another role");
         boolean eq = admin.equals(admin2);
         System.out.println((!eq ? "[PASS]" : "[FAIL]") + " Role 7 equals: разные роли должны быть не равны -> " + eq);
+    }
+    private static void testAssignmentMetadata() {
+        try {
+            AssignmentMetadata m1 = AssignmentMetadata.now("admin", "Initial setup");
+            System.out.println("[PASS] AM 1 now(valid): " + m1.format());
+        } catch (Exception e) {
+            System.out.println("[FAIL] AM 1 now(valid) -> " + e);
+        }
+        try {
+            AssignmentMetadata m2 = AssignmentMetadata.now("admin", null);
+            System.out.println("[PASS] AM 2 now(reason=null): " + m2.format());
+        } catch (Exception e) {
+            System.out.println("[FAIL] AM 2 now(reason=null) -> " + e);
+        }
+        try {
+            AssignmentMetadata.now("   ", "x");
+            System.out.println("[FAIL] AM 3 assignedBy blank -> ожидали exception, но объект создался");
+        } catch (IllegalArgumentException e) {
+            System.out.println("[PASS] AM 3 assignedBy blank: " + e.getMessage());
+        }
+
+        try {
+            new AssignmentMetadata("admin", "   ", null);
+            System.out.println("[FAIL] AM 4 assignedAt blank -> ожидали exception, но объект создался");
+        } catch (IllegalArgumentException e) {
+            System.out.println("[PASS] AM 4 assignedAt blank: " + e.getMessage());
+        }
     }
 }
