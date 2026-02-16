@@ -15,21 +15,21 @@ public class Main {
 
     private static void testUser() {
         try {
-            User user1 = User.validate("d1ser", "Konstantin Prozorenko", "prozorenko24@gmail.com");
+            User user1 = User.create("d1ser", "Konstantin Prozorenko", "prozorenko24@gmail.com");
             System.out.println("[PASS] User 1 (валидный): " + user1.format());
         } catch (IllegalArgumentException e) {
             System.out.println("[FAIL] User 1 (валидный) -> " + e.getMessage());
         }
 
         try {
-            User user2 = User.validate("d1ser", "Konstantin Prozorenko", "prozorenkogmail.com");
+            User user2 = User.create("d1ser", "Konstantin Prozorenko", "prozorenkogmail.com");
             System.out.println("[FAIL] User 2 (невалидный email) -> должен был быть exception, но создался: " + user2.format());
         } catch (IllegalArgumentException e) {
             System.out.println("[PASS] User 2 (невалидный email): " + e.getMessage());
         }
 
         try {
-            User user3 = User.validate("dd", "Konstantin Prozorenko", "prozorenko24@gmail.com");
+            User user3 = User.create("dd", "Konstantin Prozorenko", "prozorenko24@gmail.com");
             System.out.println("[FAIL] User 3 (короткий username) -> должен был быть exception, но создался: " + user3.format());
         } catch (IllegalArgumentException e) {
             System.out.println("[PASS] User 3 (короткий username): " + e.getMessage());
