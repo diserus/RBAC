@@ -82,4 +82,5 @@ public class Role {
                 """.formatted(name, id, description, permissions.size(), permissionsList).trim();
     }
     public String getName(){ return name;}
+    public String getId() { return id; }
 }
