@@ -3,8 +3,8 @@ import java.util.stream.Collectors;
 
 public class Role {
     private final String id;
-    private final String name;
-    private final String description;
+    private String name;
+    private String description;
     private final Set<Permission> permissions;
 
     public Role(String name, String description) {
@@ -83,4 +83,16 @@ public class Role {
     }
     public String getName(){ return name;}
     public String getId() { return id; }
+    public void setDescription(String description) {
+        this.description = (description == null) ? "" : description.trim();
+    }
+    public void setName(String name) {
+        if (name == null || name.isBlank())
+            throw new IllegalArgumentException("Название роли не может быть пустым.");
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
 }
