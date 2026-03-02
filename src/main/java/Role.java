@@ -91,4 +91,8 @@ public class Role {
             throw new IllegalArgumentException("Название роли не может быть пустым.");
         this.name = name;
     }
+
+    public String getDescription() {
+        return description;
+    }
 }
