@@ -108,4 +108,14 @@ public class RoleManager implements Repository<Role> {
     public int hashCode() {
         return Objects.hash(rolesById);
     }
+
+    public void renameRole(String oldName, String newName) {
+        Role role = rolesByName.get(oldName);
+        if (role == null) throw new NoSuchElementException("Роль '" + oldName + "' не найдена");
+        if (rolesByName.containsKey(newName))
+            throw new IllegalStateException("Роль '" + newName + "' уже существует");
+        rolesByName.remove(oldName);
+        role.setName(newName);
+        rolesByName.put(newName, role);
+    }
 }
