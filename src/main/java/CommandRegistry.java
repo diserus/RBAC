@@ -249,19 +249,12 @@ public class CommandRegistry {
                     if (opt.isEmpty()) { System.out.println("✗ Роль не найдена."); return; }
                     List<Permission> perms = new ArrayList<>(opt.get().getPermissions());
                     if (perms.isEmpty()) { System.out.println("У роли нет прав."); return; }
-                    String chosen = ConsoleUtils.promptChoice(scanner,
-                            "Выберите право для удаления:", perms.stream()
-                                    .map(p -> (Object) p.format())
-                                    .map(Object::toString)
-                                    .collect(Collectors.toList())
-                    );
                     for (int i = 0; i < perms.size(); i++)
                         System.out.printf("  %d. %s%n", i + 1, perms.get(i).format());
                     int idx = ConsoleUtils.promptInt(scanner, "Номер для удаления", 1, perms.size()) - 1;
                     system.getRoleManager().removePermissionFromRole(roleName, perms.get(idx));
                     System.out.println("✓ Право удалено.");
                 });
-
         parser.registerCommand("role-search", "Поиск ролей",
                 (scanner, system) -> {
                     List<String> filterOpts = List.of("1 — имя", "2 — наличие права", "3 — мин.кол-во прав");
@@ -299,25 +292,20 @@ public class CommandRegistry {
 
                     List<Role> roles = system.getRoleManager().findAll(r -> true, RoleSorters.byName());
                     if (roles.isEmpty()) { System.out.println("✗ Роли отсутствуют."); return; }
-                    Role role = ConsoleUtils.promptChoice(scanner, "Выберите роль:",
-                                    roles.stream().map(Role::getName).collect(Collectors.toList()))
-                            .transform(name -> roles.stream()
-                                    .filter(r -> r.getName().equals(name)).findFirst().orElseThrow());
-
                     for (int i = 0; i < roles.size(); i++)
                         System.out.printf("  %d. %s%n", i + 1, roles.get(i).getName());
-                    int idx = ConsoleUtils.promptInt(scanner, "Выберите роль (номер)", 1, roles.size()) - 1;
-                    Role selectedRole = roles.get(idx);
+                    int roleIdx = ConsoleUtils.promptInt(scanner, "Выберите роль (номер)", 1, roles.size()) - 1;
+                    Role selectedRole = roles.get(roleIdx);
 
-                    List<String> types = List.of("1 — постоянное", "2 — временное");
-                    String typeChoice = ConsoleUtils.promptChoice(scanner, "Тип назначения:", types);
+                    System.out.println("1 — постоянное  2 — временное");
+                    String typeChoice = ConsoleUtils.promptString(scanner, "Тип:", true);
                     String reason = ConsoleUtils.promptString(scanner, "Причина (опционально):", false);
 
                     try {
                         AssignmentMetadata meta = AssignmentMetadata.now(
                                 system.getCurrentUser(), reason.isEmpty() ? null : reason);
                         RoleAssignment assignment;
-                        if (typeChoice.charAt(0) == '2') {
+                        if (typeChoice.equals("2")) {
                             String expires = ConsoleUtils.promptString(scanner,
                                     "Дата истечения (yyyy-MM-dd HH:mm:ss):", true);
                             assignment = new TemporaryAssignment(userOpt.get(), selectedRole, meta, expires, false);
@@ -332,7 +320,6 @@ public class CommandRegistry {
                         System.out.println("✗ Ошибка: " + e.getMessage());
                     }
                 });
-
         parser.registerCommand("revoke-role", "Отозвать роль у пользователя",
                 (scanner, system) -> {
                     String username = ConsoleUtils.promptString(scanner, "Username:", true);
