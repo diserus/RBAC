@@ -1,9 +1,6 @@
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Обновлённый RBACSystem: добавлены AuditLog и ReportGenerator (подзадачи 4.2, 4.3).
- */
 public class RBACSystem {
     private final UserManager       userManager;
     private final RoleManager       roleManager;
