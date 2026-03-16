@@ -2,15 +2,20 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class RBACSystem {
-    private final UserManager userManager;
-    private final RoleManager roleManager;
+    private final UserManager       userManager;
+    private final RoleManager       roleManager;
     private final AssignmentManager assignmentManager;
+    private final AuditLog          auditLog;
+    private final ReportGenerator   reportGenerator;
     private String currentUser = "system";
 
     public RBACSystem() {
         userManager       = new UserManager();
         roleManager       = new RoleManager();
         assignmentManager = new AssignmentManager();
+        auditLog          = new AuditLog();
+        reportGenerator   = new ReportGenerator();
+
         roleManager.setCanRemoveCheck(role ->
                 assignmentManager.findByRole(role).stream().noneMatch(RoleAssignment::isActive)
         );
@@ -19,7 +24,9 @@ public class RBACSystem {
     public UserManager       getUserManager()       { return userManager; }
     public RoleManager       getRoleManager()       { return roleManager; }
     public AssignmentManager getAssignmentManager() { return assignmentManager; }
-    public String            getCurrentUser()       { return currentUser; }
+    public AuditLog          getAuditLog()          { return auditLog; }
+    public ReportGenerator   getReportGenerator()   { return reportGenerator; }
+    public String            getCurrentUser()        { return currentUser; }
     public void              setCurrentUser(String u) { this.currentUser = u; }
 
     public void initialize() {
@@ -58,6 +65,8 @@ public class RBACSystem {
         assignmentManager.add(new PermanentAssignment(
                 admin, adminRole, AssignmentMetadata.now("system", "Initial setup")
         ));
+
+        auditLog.log("SYSTEM_INIT", "system", "RBACSystem", "Система инициализирована");
     }
 
     public String generateStatistics() {
@@ -93,4 +102,3 @@ public class RBACSystem {
                 """.formatted(totalUsers, totalRoles, total, active, expired, avg, top3);
     }
 }
-
