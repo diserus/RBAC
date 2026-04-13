@@ -7,6 +7,8 @@ public class RBACSystem {
     private final AssignmentManager assignmentManager;
     private final AuditLog          auditLog;
     private final ReportGenerator   reportGenerator;
+    private final BackgroundExecutor backgroundExecutor;
+    private final SystemSnapshot     systemSnapshot;
     private final AssignmentMaintenanceService maintenanceService;
     private String currentUser = "system";
 
@@ -16,6 +18,8 @@ public class RBACSystem {
         assignmentManager = new AssignmentManager();
         auditLog          = new AuditLog();
         reportGenerator   = new ReportGenerator();
+        backgroundExecutor = new BackgroundExecutor();
+        systemSnapshot     = new SystemSnapshot();
         maintenanceService = new AssignmentMaintenanceService(
                 assignmentManager,
                 auditLog,
@@ -32,6 +36,7 @@ public class RBACSystem {
     public AssignmentManager getAssignmentManager() { return assignmentManager; }
     public AuditLog          getAuditLog()          { return auditLog; }
     public ReportGenerator   getReportGenerator()   { return reportGenerator; }
+    public BackgroundExecutor getBackgroundExecutor() { return backgroundExecutor; }
     public AssignmentMaintenanceService getMaintenanceService() { return maintenanceService; }
     public String            getCurrentUser()        { return currentUser; }
     public void              setCurrentUser(String u) { this.currentUser = u; }
@@ -80,7 +85,20 @@ public class RBACSystem {
         maintenanceService.start(intervalSeconds);
     }
 
+    public java.util.concurrent.Future<String> generateUserReportAsync() {
+        return backgroundExecutor.submit(() ->
+                reportGenerator.generateUserReport(userManager, assignmentManager));
+    }
+
+    public java.util.concurrent.Future<String> saveSnapshotAsync(String filename) {
+        return backgroundExecutor.submit(() -> {
+            systemSnapshot.save(this, filename);
+            return filename;
+        });
+    }
+
     public void shutdown() {
+        backgroundExecutor.shutdown();
         maintenanceService.shutdown();
     }
 
