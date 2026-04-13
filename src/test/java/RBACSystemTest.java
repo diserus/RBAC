@@ -11,6 +11,11 @@ class RBACSystemTest {
         system.initialize();
     }
 
+    @AfterEach
+    void tearDown() {
+        system.shutdown();
+    }
+
     @Test
     void initialize_shouldCreateDefaultRoles() {
         assertTrue(system.getRoleManager().exists("Admin"));
@@ -73,5 +78,10 @@ class RBACSystemTest {
         assertNotNull(system.getUserManager());
         assertNotNull(system.getRoleManager());
         assertNotNull(system.getAssignmentManager());
+    }
+
+    @Test
+    void maintenanceService_shouldNotBeNull() {
+        assertNotNull(system.getMaintenanceService());
     }
 }
