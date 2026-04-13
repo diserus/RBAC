@@ -149,6 +149,18 @@ public class AssignmentManager implements Repository<RoleAssignment> {
         }
     }
 
+    public int deactivateExpiredTemporaryAssignments() {
+        List<TemporaryAssignment> expiredAssignments = assignments.values().stream()
+                .filter(TemporaryAssignment.class::isInstance)
+                .map(TemporaryAssignment.class::cast)
+                .filter(assignment -> !assignment.isDeactivated())
+                .filter(TemporaryAssignment::isExpired)
+                .collect(Collectors.toList());
+
+        expiredAssignments.forEach(TemporaryAssignment::deactivate);
+        return expiredAssignments.size();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

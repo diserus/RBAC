@@ -9,6 +9,7 @@ public class RBACSystem {
     private final ReportGenerator   reportGenerator;
     private final BackgroundExecutor backgroundExecutor;
     private final SystemSnapshot     systemSnapshot;
+    private final AssignmentMaintenanceService maintenanceService;
     private String currentUser = "system";
 
     public RBACSystem() {
@@ -19,6 +20,11 @@ public class RBACSystem {
         reportGenerator   = new ReportGenerator();
         backgroundExecutor = new BackgroundExecutor();
         systemSnapshot     = new SystemSnapshot();
+        maintenanceService = new AssignmentMaintenanceService(
+                assignmentManager,
+                auditLog,
+                this::generateStatistics
+        );
 
         roleManager.setCanRemoveCheck(role ->
                 assignmentManager.findByRole(role).stream().noneMatch(RoleAssignment::isActive)
@@ -31,6 +37,7 @@ public class RBACSystem {
     public AuditLog          getAuditLog()          { return auditLog; }
     public ReportGenerator   getReportGenerator()   { return reportGenerator; }
     public BackgroundExecutor getBackgroundExecutor() { return backgroundExecutor; }
+    public AssignmentMaintenanceService getMaintenanceService() { return maintenanceService; }
     public String            getCurrentUser()        { return currentUser; }
     public void              setCurrentUser(String u) { this.currentUser = u; }
 
@@ -74,6 +81,10 @@ public class RBACSystem {
         auditLog.log("SYSTEM_INIT", "system", "RBACSystem", "Система инициализирована");
     }
 
+    public void startScheduledMaintenance(long intervalSeconds) {
+        maintenanceService.start(intervalSeconds);
+    }
+
     public java.util.concurrent.Future<String> generateUserReportAsync() {
         return backgroundExecutor.submit(() ->
                 reportGenerator.generateUserReport(userManager, assignmentManager));
@@ -88,6 +99,7 @@ public class RBACSystem {
 
     public void shutdown() {
         backgroundExecutor.shutdown();
+        maintenanceService.shutdown();
     }
 
     public String generateStatistics() {

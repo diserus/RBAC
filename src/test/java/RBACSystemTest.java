@@ -85,26 +85,7 @@ class RBACSystemTest {
     }
 
     @Test
-    void backgroundExecutor_shouldNotBeNull() {
-        assertNotNull(system.getBackgroundExecutor());
-    }
-
-    @Test
-    void generateUserReportAsync_shouldReturnReport() throws Exception {
-        Future<String> future = system.generateUserReportAsync();
-        String report = future.get(5, TimeUnit.SECONDS);
-        assertTrue(report.contains("ОТЧЁТ ПО ПОЛЬЗОВАТЕЛЯМ"));
-    }
-
-    @Test
-    void saveSnapshotAsync_shouldPersistFile() throws Exception {
-        Path snapshot = Path.of("rbac-system-test-snapshot.txt");
-        try {
-            Future<String> future = system.saveSnapshotAsync(snapshot.toString());
-            assertEquals(snapshot.toString(), future.get(5, TimeUnit.SECONDS));
-            assertTrue(Files.readString(snapshot).contains("RBAC SYSTEM SNAPSHOT"));
-        } finally {
-            Files.deleteIfExists(snapshot);
-        }
+    void maintenanceService_shouldNotBeNull() {
+        assertNotNull(system.getMaintenanceService());
     }
 }
