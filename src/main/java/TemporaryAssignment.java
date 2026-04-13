@@ -7,8 +7,8 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
     private static final DateTimeFormatter FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private String expiresAt;
-    private boolean autoRenew;
+    private volatile String expiresAt;
+    private final boolean autoRenew;
 
     public TemporaryAssignment(User user, Role role, AssignmentMetadata metadata,
                                String expiresAt, boolean autoRenew) {
@@ -35,7 +35,7 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
         return "TEMPORARY";
     }
 
-    public boolean isExpired() {
+    public synchronized boolean isExpired() {
         try {
             LocalDateTime expiration = LocalDateTime.parse(expiresAt, FORMATTER);
             LocalDateTime now = LocalDateTime.now();
@@ -45,7 +45,7 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
         }
     }
 
-    public void extend(String newExpirationDate) {
+    public synchronized void extend(String newExpirationDate) {
         if (newExpirationDate == null || newExpirationDate.isBlank()) {
             throw new IllegalArgumentException("newExpirationDate не может быть null или empty");
         }
@@ -57,7 +57,7 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
         this.expiresAt = newExpirationDate;
     }
 
-    public String getTimeRemaining() {
+    public synchronized String getTimeRemaining() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime exp = LocalDateTime.parse(expiresAt, FORMATTER);
         if (now.isAfter(exp)) return "EXPIRED";
@@ -71,7 +71,7 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
         return "%dd %dh %dm".formatted(days, hours, minutes);
     }
 
-    public String getExpiresAt() {
+    public synchronized String getExpiresAt() {
         return expiresAt;
     }
 
