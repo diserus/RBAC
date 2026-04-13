@@ -147,4 +147,16 @@ class AuditLogTest {
             Files.deleteIfExists(Path.of(filename));
         }
     }
+
+    @Test
+    void log_asyncQueue_shouldBecomeVisibleOnRead() {
+        log.log("USER_CREATE", "admin", "alice", null);
+        log.log("ROLE_ASSIGN", "admin", "alice", "role=Admin");
+
+        List<AuditLog.AuditEntry> entries = log.getAll();
+
+        assertEquals(2, entries.size());
+        assertEquals("USER_CREATE", entries.get(0).action());
+        assertEquals("ROLE_ASSIGN", entries.get(1).action());
+    }
 }
