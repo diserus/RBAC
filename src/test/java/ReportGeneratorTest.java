@@ -63,6 +63,18 @@ class ReportGeneratorTest {
         assertTrue(report.contains("—") || report.contains("-"));
     }
 
+    @Test
+    void generateUserReportParallel_containsUsersAndParallelMarker() {
+        User bob = User.create("bobby", "Bob Smith", "bobby@x.com");
+        system.getUserManager().add(bob);
+
+        String report = generator.generateUserReportParallel(
+                system.getUserManager(), system.getAssignmentManager());
+
+        assertTrue(report.contains("bobby"));
+        assertTrue(report.contains("parallel"));
+    }
+
     // ─── generateRoleReport ────────────────────────────────────────────────
 
     @Test
@@ -122,6 +134,16 @@ class ReportGeneratorTest {
         String report = generator.generatePermissionMatrix(
                 empty.getUserManager(), empty.getAssignmentManager());
         assertTrue(report.contains("Нет данных") || report.contains("МАТРИЦА"));
+    }
+
+    @Test
+    void generatePermissionMatrixParallel_containsResourcesAndParallelMarker() {
+        String report = generator.generatePermissionMatrixParallel(
+                system.getUserManager(), system.getAssignmentManager());
+
+        assertTrue(report.contains("users"));
+        assertTrue(report.contains("reports"));
+        assertTrue(report.contains("parallel"));
     }
 
     // ─── exportToFile ──────────────────────────────────────────────────────
