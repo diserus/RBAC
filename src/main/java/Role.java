@@ -3,8 +3,8 @@ import java.util.stream.Collectors;
 
 public class Role {
     private final String id;
-    private String name;
-    private String description;
+    private volatile String name;
+    private volatile String description;
     private final Set<Permission> permissions;
 
     public Role(String name, String description) {
@@ -13,18 +13,18 @@ public class Role {
         }
         this.name = name;
         this.description = (description == null) ? "" : description;
-        this.permissions = new HashSet<>();
+        this.permissions = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
         this.id = "role_" + UUID.randomUUID();
     }
 
-    public void addPermission(Permission permission) {
+    public synchronized void addPermission(Permission permission) {
         if (permission != null) {
             permissions.add(permission);
         }
     }
 
-    public void removePermission(Permission permission) {
+    public synchronized void removePermission(Permission permission) {
         permissions.remove(permission);
     }
 
@@ -32,7 +32,7 @@ public class Role {
         return permissions.contains(permission);
     }
 
-    public boolean hasPermission(String permissionName, String resource) {
+    public synchronized boolean hasPermission(String permissionName, String resource) {
         try {
             Permission temp = new Permission(permissionName, resource, "temp");
 
@@ -47,7 +47,7 @@ public class Role {
         return false;
     }
 
-    public Set<Permission> getPermissions() {
+    public synchronized Set<Permission> getPermissions() {
         return Set.copyOf(permissions);
     }
 
@@ -83,10 +83,10 @@ public class Role {
     }
     public String getName(){ return name;}
     public String getId() { return id; }
-    public void setDescription(String description) {
+    public synchronized void setDescription(String description) {
         this.description = (description == null) ? "" : description.trim();
     }
-    public void setName(String name) {
+    public synchronized void setName(String name) {
         if (name == null || name.isBlank())
             throw new IllegalArgumentException("Название роли не может быть пустым.");
         this.name = name;
