@@ -111,6 +111,20 @@ class UserManagerTest {
     }
 
     @Test
+    void findByFilterParallel_byDomain_shouldReturnMatchingUsers() {
+        User charlie = User.create("charlie", "Charlie Brown", "charlie@company.com");
+        manager.add(charlie);
+
+        List<User> result = manager.findByFilterParallel(
+                UserFilters.byEmailDomain("@company.com")
+        );
+
+        assertEquals(2, result.size());
+        assertTrue(result.contains(bob));
+        assertTrue(result.contains(charlie));
+    }
+
+    @Test
     void findAll_withFilterAndSorter_shouldReturnSortedFilteredList() {
         User charlie = User.create("charlie", "Charlie Brown", "charlie@company.com");
         manager.add(charlie);

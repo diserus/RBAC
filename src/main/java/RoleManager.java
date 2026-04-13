@@ -1,12 +1,20 @@
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class RoleManager implements Repository<Role> {
-    private final Map<String, Role> rolesById   = new HashMap<>();
-    private final Map<String, Role> rolesByName = new HashMap<>();
+    private final Map<String, Role> rolesById   = new ConcurrentHashMap<>();
+    private final Map<String, Role> rolesByName = new ConcurrentHashMap<>();
+    private final Object mutationLock = new Object();
 
-    private Predicate<Role> canRemoveCheck = role -> true;
+    private volatile Predicate<Role> canRemoveCheck = role -> true;
 
     public void setCanRemoveCheck(Predicate<Role> check) {
         this.canRemoveCheck = check;
@@ -15,25 +23,29 @@ public class RoleManager implements Repository<Role> {
     @Override
     public void add(Role role) {
         if (role == null) throw new IllegalArgumentException("role не может быть null");
-        if (rolesByName.containsKey(role.getName())) {
-            throw new IllegalStateException("Роль '" + role.getName() + "' уже существует");
+        synchronized (mutationLock) {
+            if (rolesByName.containsKey(role.getName())) {
+                throw new IllegalStateException("Роль '" + role.getName() + "' уже существует");
+            }
+            rolesById.put(role.getId(), role);
+            rolesByName.put(role.getName(), role);
         }
-        rolesById.put(role.getId(), role);
-        rolesByName.put(role.getName(), role);
     }
 
     @Override
     public boolean remove(Role role) {
         if (role == null) return false;
-        if (!rolesById.containsKey(role.getId())) return false;
-        if (!canRemoveCheck.test(role)) {
-            throw new IllegalStateException(
-                    "Роль '" + role.getName() + "' назначена пользователям — удаление запрещено"
-            );
+        synchronized (mutationLock) {
+            if (!rolesById.containsKey(role.getId())) return false;
+            if (!canRemoveCheck.test(role)) {
+                throw new IllegalStateException(
+                        "Роль '" + role.getName() + "' назначена пользователям — удаление запрещено"
+                );
+            }
+            rolesById.remove(role.getId());
+            rolesByName.remove(role.getName());
+            return true;
         }
-        rolesById.remove(role.getId());
-        rolesByName.remove(role.getName());
-        return true;
     }
 
     @Override
@@ -53,8 +65,10 @@ public class RoleManager implements Repository<Role> {
 
     @Override
     public void clear() {
-        rolesById.clear();
-        rolesByName.clear();
+        synchronized (mutationLock) {
+            rolesById.clear();
+            rolesByName.clear();
+        }
     }
 
     public Optional<Role> findByName(String name) {
@@ -63,6 +77,12 @@ public class RoleManager implements Repository<Role> {
 
     public List<Role> findByFilter(RoleFilter filter) {
         return rolesById.values().stream()
+                .filter(filter::test)
+                .collect(Collectors.toList());
+    }
+
+    public List<Role> findByFilterParallel(RoleFilter filter) {
+        return rolesById.values().parallelStream()
                 .filter(filter::test)
                 .collect(Collectors.toList());
     }
@@ -110,12 +130,14 @@ public class RoleManager implements Repository<Role> {
     }
 
     public void renameRole(String oldName, String newName) {
-        Role role = rolesByName.get(oldName);
-        if (role == null) throw new NoSuchElementException("Роль '" + oldName + "' не найдена");
-        if (rolesByName.containsKey(newName))
-            throw new IllegalStateException("Роль '" + newName + "' уже существует");
-        rolesByName.remove(oldName);
-        role.setName(newName);
-        rolesByName.put(newName, role);
+        synchronized (mutationLock) {
+            Role role = rolesByName.get(oldName);
+            if (role == null) throw new NoSuchElementException("Роль '" + oldName + "' не найдена");
+            if (rolesByName.containsKey(newName))
+                throw new IllegalStateException("Роль '" + newName + "' уже существует");
+            rolesByName.remove(oldName);
+            role.setName(newName);
+            rolesByName.put(newName, role);
+        }
     }
 }

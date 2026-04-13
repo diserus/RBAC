@@ -1,24 +1,34 @@
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class AssignmentManager implements Repository<RoleAssignment> {
-    private final Map<String, RoleAssignment> assignments = new HashMap<>();
+    private final Map<String, RoleAssignment> assignments = new ConcurrentHashMap<>();
+    private final Object mutationLock = new Object();
 
     @Override
     public void add(RoleAssignment assignment) {
         if (assignment == null) throw new IllegalArgumentException("assignment не может быть null");
-
-        boolean duplicate = assignments.values().stream()
-                .anyMatch(a -> a.isActive()
-                        && a.user().equals(assignment.user())
-                        && a.role().equals(assignment.role()));
-        if (duplicate) {
-            throw new IllegalStateException(
-                    "Пользователь '" + assignment.user().username() +
-                            "' уже имеет активное назначение роли '" + assignment.role().getName() + "'"
-            );
+        synchronized (mutationLock) {
+            boolean duplicate = assignments.values().stream()
+                    .anyMatch(a -> a.isActive()
+                            && a.user().equals(assignment.user())
+                            && a.role().equals(assignment.role()));
+            if (duplicate) {
+                throw new IllegalStateException(
+                        "Пользователь '" + assignment.user().username() +
+                                "' уже имеет активное назначение роли '" + assignment.role().getName() + "'"
+                );
+            }
+            assignments.put(assignment.assignmentId(), assignment);
         }
-        assignments.put(assignment.assignmentId(), assignment);
     }
 
     @Override
@@ -44,7 +54,9 @@ public class AssignmentManager implements Repository<RoleAssignment> {
 
     @Override
     public void clear() {
-        assignments.clear();
+        synchronized (mutationLock) {
+            assignments.clear();
+        }
     }
 
     public List<RoleAssignment> findByUser(User user) {
@@ -61,6 +73,12 @@ public class AssignmentManager implements Repository<RoleAssignment> {
 
     public List<RoleAssignment> findByFilter(AssignmentFilter filter) {
         return assignments.values().stream()
+                .filter(filter::test)
+                .collect(Collectors.toList());
+    }
+
+    public List<RoleAssignment> findByFilterParallel(AssignmentFilter filter) {
+        return assignments.values().parallelStream()
                 .filter(filter::test)
                 .collect(Collectors.toList());
     }
@@ -105,26 +123,30 @@ public class AssignmentManager implements Repository<RoleAssignment> {
     }
 
     public void revokeAssignment(String assignmentId) {
-        RoleAssignment assignment = assignments.get(assignmentId);
-        if (assignment == null) {
-            throw new NoSuchElementException("Назначение '" + assignmentId + "' не найдено");
-        }
-        if (assignment instanceof PermanentAssignment perm) {
-            perm.revoke();
-        } else if (assignment instanceof TemporaryAssignment) {
-            assignments.remove(assignmentId);
+        synchronized (mutationLock) {
+            RoleAssignment assignment = assignments.get(assignmentId);
+            if (assignment == null) {
+                throw new NoSuchElementException("Назначение '" + assignmentId + "' не найдено");
+            }
+            if (assignment instanceof PermanentAssignment perm) {
+                perm.revoke();
+            } else if (assignment instanceof TemporaryAssignment) {
+                assignments.remove(assignmentId);
+            }
         }
     }
 
     public void extendTemporaryAssignment(String assignmentId, String newExpirationDate) {
-        RoleAssignment assignment = assignments.get(assignmentId);
-        if (assignment == null) {
-            throw new NoSuchElementException("Назначение '" + assignmentId + "' не найдено");
+        synchronized (mutationLock) {
+            RoleAssignment assignment = assignments.get(assignmentId);
+            if (assignment == null) {
+                throw new NoSuchElementException("Назначение '" + assignmentId + "' не найдено");
+            }
+            if (!(assignment instanceof TemporaryAssignment temp)) {
+                throw new IllegalStateException("Назначение '" + assignmentId + "' не является временным");
+            }
+            temp.extend(newExpirationDate);
         }
-        if (!(assignment instanceof TemporaryAssignment temp)) {
-            throw new IllegalStateException("Назначение '" + assignmentId + "' не является временным");
-        }
-        temp.extend(newExpirationDate);
     }
 
     public int deactivateExpiredTemporaryAssignments() {
