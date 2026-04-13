@@ -7,6 +7,7 @@ public class RBACSystem {
     private final AssignmentManager assignmentManager;
     private final AuditLog          auditLog;
     private final ReportGenerator   reportGenerator;
+    private final AssignmentMaintenanceService maintenanceService;
     private String currentUser = "system";
 
     public RBACSystem() {
@@ -15,6 +16,11 @@ public class RBACSystem {
         assignmentManager = new AssignmentManager();
         auditLog          = new AuditLog();
         reportGenerator   = new ReportGenerator();
+        maintenanceService = new AssignmentMaintenanceService(
+                assignmentManager,
+                auditLog,
+                this::generateStatistics
+        );
 
         roleManager.setCanRemoveCheck(role ->
                 assignmentManager.findByRole(role).stream().noneMatch(RoleAssignment::isActive)
@@ -26,6 +32,7 @@ public class RBACSystem {
     public AssignmentManager getAssignmentManager() { return assignmentManager; }
     public AuditLog          getAuditLog()          { return auditLog; }
     public ReportGenerator   getReportGenerator()   { return reportGenerator; }
+    public AssignmentMaintenanceService getMaintenanceService() { return maintenanceService; }
     public String            getCurrentUser()        { return currentUser; }
     public void              setCurrentUser(String u) { this.currentUser = u; }
 
@@ -67,6 +74,14 @@ public class RBACSystem {
         ));
 
         auditLog.log("SYSTEM_INIT", "system", "RBACSystem", "Система инициализирована");
+    }
+
+    public void startScheduledMaintenance(long intervalSeconds) {
+        maintenanceService.start(intervalSeconds);
+    }
+
+    public void shutdown() {
+        maintenanceService.shutdown();
     }
 
     public String generateStatistics() {
