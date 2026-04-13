@@ -7,6 +7,8 @@ public class RBACSystem {
     private final AssignmentManager assignmentManager;
     private final AuditLog          auditLog;
     private final ReportGenerator   reportGenerator;
+    private final BackgroundExecutor backgroundExecutor;
+    private final SystemSnapshot     systemSnapshot;
     private String currentUser = "system";
 
     public RBACSystem() {
@@ -15,6 +17,8 @@ public class RBACSystem {
         assignmentManager = new AssignmentManager();
         auditLog          = new AuditLog();
         reportGenerator   = new ReportGenerator();
+        backgroundExecutor = new BackgroundExecutor();
+        systemSnapshot     = new SystemSnapshot();
 
         roleManager.setCanRemoveCheck(role ->
                 assignmentManager.findByRole(role).stream().noneMatch(RoleAssignment::isActive)
@@ -26,6 +30,7 @@ public class RBACSystem {
     public AssignmentManager getAssignmentManager() { return assignmentManager; }
     public AuditLog          getAuditLog()          { return auditLog; }
     public ReportGenerator   getReportGenerator()   { return reportGenerator; }
+    public BackgroundExecutor getBackgroundExecutor() { return backgroundExecutor; }
     public String            getCurrentUser()        { return currentUser; }
     public void              setCurrentUser(String u) { this.currentUser = u; }
 
@@ -67,6 +72,22 @@ public class RBACSystem {
         ));
 
         auditLog.log("SYSTEM_INIT", "system", "RBACSystem", "Система инициализирована");
+    }
+
+    public java.util.concurrent.Future<String> generateUserReportAsync() {
+        return backgroundExecutor.submit(() ->
+                reportGenerator.generateUserReport(userManager, assignmentManager));
+    }
+
+    public java.util.concurrent.Future<String> saveSnapshotAsync(String filename) {
+        return backgroundExecutor.submit(() -> {
+            systemSnapshot.save(this, filename);
+            return filename;
+        });
+    }
+
+    public void shutdown() {
+        backgroundExecutor.shutdown();
     }
 
     public String generateStatistics() {
