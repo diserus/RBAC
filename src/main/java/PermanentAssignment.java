@@ -1,5 +1,5 @@
 public class PermanentAssignment extends AbstractRoleAssignment{
-    private boolean revoked;
+    private volatile boolean revoked;
 
     public PermanentAssignment(User user, Role role, AssignmentMetadata metadata) {
         super(user, role, metadata);
@@ -16,7 +16,7 @@ public class PermanentAssignment extends AbstractRoleAssignment{
         return "PERMANENT";
     }
 
-    public void revoke() {
+    public synchronized void revoke() {
         this.revoked = true;
     }
 
