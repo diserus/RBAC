@@ -105,6 +105,16 @@ class RoleManagerTest {
     }
 
     @Test
+    void findByFilterParallel_hasPermission_shouldReturnMatchingRoles() {
+        List<Role> result = manager.findByFilterParallel(
+                RoleFilters.hasPermission(readPerm)
+        );
+        assertEquals(2, result.size());
+        assertTrue(result.contains(admin));
+        assertTrue(result.contains(viewer));
+    }
+
+    @Test
     void findAll_withFilterAndSorter_shouldReturnSortedList() {
         Role editor = new Role("EDITOR", "Can edit");
         editor.addPermission(readPerm);
