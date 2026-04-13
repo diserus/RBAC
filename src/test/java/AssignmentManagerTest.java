@@ -208,6 +208,14 @@ class AssignmentManagerTest {
     }
 
     @Test
+    void findByFilterParallel_activeOnly_shouldReturnOnlyActive() {
+        aliceAdmin.revoke();
+        List<RoleAssignment> result = manager.findByFilterParallel(AssignmentFilters.activeOnly());
+        assertEquals(1, result.size());
+        assertEquals(bobViewer, result.get(0));
+    }
+
+    @Test
     void findAll_withFilterAndSorter_shouldReturnSortedList() {
         List<RoleAssignment> result = manager.findAll(
                 AssignmentFilters.activeOnly(),
