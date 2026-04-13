@@ -1,5 +1,9 @@
 import org.junit.jupiter.api.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RBACSystemTest {
@@ -9,6 +13,11 @@ class RBACSystemTest {
     void setUp() {
         system = new RBACSystem();
         system.initialize();
+    }
+
+    @AfterEach
+    void tearDown() {
+        system.shutdown();
     }
 
     @Test
@@ -73,5 +82,29 @@ class RBACSystemTest {
         assertNotNull(system.getUserManager());
         assertNotNull(system.getRoleManager());
         assertNotNull(system.getAssignmentManager());
+    }
+
+    @Test
+    void backgroundExecutor_shouldNotBeNull() {
+        assertNotNull(system.getBackgroundExecutor());
+    }
+
+    @Test
+    void generateUserReportAsync_shouldReturnReport() throws Exception {
+        Future<String> future = system.generateUserReportAsync();
+        String report = future.get(5, TimeUnit.SECONDS);
+        assertTrue(report.contains("ОТЧЁТ ПО ПОЛЬЗОВАТЕЛЯМ"));
+    }
+
+    @Test
+    void saveSnapshotAsync_shouldPersistFile() throws Exception {
+        Path snapshot = Path.of("rbac-system-test-snapshot.txt");
+        try {
+            Future<String> future = system.saveSnapshotAsync(snapshot.toString());
+            assertEquals(snapshot.toString(), future.get(5, TimeUnit.SECONDS));
+            assertTrue(Files.readString(snapshot).contains("RBAC SYSTEM SNAPSHOT"));
+        } finally {
+            Files.deleteIfExists(snapshot);
+        }
     }
 }

@@ -1,5 +1,7 @@
 import org.junit.jupiter.api.*;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -24,6 +26,11 @@ class CommandRegistryTest {
         system = new RBACSystem();
         system.initialize();
         CommandRegistry.registerAll(parser);
+    }
+
+    @AfterEach
+    void tearDown() {
+        system.shutdown();
     }
 
     // ══════════════════════ user-list ══════════════════════
@@ -248,6 +255,31 @@ class CommandRegistryTest {
     void assignRole_unknownUser_shouldPrintError() {
         String output = execute("assign-role", "ghost\n");
         assertTrue(output.contains("✗"));
+    }
+
+    @Test
+    void reportUsersAsync_shouldStartBackgroundGeneration() {
+        String output = execute("report-users-async", "");
+        assertTrue(output.contains("в фоне"));
+    }
+
+    @Test
+    void saveAsync_shouldCreateSnapshotFile() throws Exception {
+        Path snapshot = Path.of("command-save-async.txt");
+        try {
+            String output = execute("save-async", snapshot + "\n");
+            assertTrue(output.contains("в фоне"));
+
+            long deadline = System.currentTimeMillis() + 5000;
+            while (!Files.exists(snapshot) && System.currentTimeMillis() < deadline) {
+                Thread.sleep(50);
+            }
+
+            assertTrue(Files.exists(snapshot));
+            assertTrue(Files.readString(snapshot).contains("RBAC SYSTEM SNAPSHOT"));
+        } finally {
+            Files.deleteIfExists(snapshot);
+        }
     }
 
     @Test

@@ -539,6 +539,19 @@ public class CommandRegistry {
                     }
                 });
 
+        parser.registerCommand("report-users-async", "Отчёт по пользователям в фоне",
+                (scanner, system) -> {
+                    system.getBackgroundExecutor().submit(() -> {
+                        String report = system.getReportGenerator().generateUserReport(
+                                system.getUserManager(), system.getAssignmentManager());
+                        System.out.println("\n[async report-users]");
+                        System.out.println(report);
+                        system.getAuditLog().log("REPORT_ASYNC", system.getCurrentUser(),
+                                "report-users-async", "background=true");
+                    });
+                    System.out.println("✓ Генерация отчёта запущена в фоне.");
+                });
+
         parser.registerCommand("report-roles", "Отчёт по ролям",
                 (scanner, system) -> {
                     String report = system.getReportGenerator().generateRoleReport(
@@ -565,6 +578,15 @@ public class CommandRegistry {
                         system.getAuditLog().log("REPORT_EXPORT", system.getCurrentUser(),
                                 "report-matrix", "file=" + fname);
                     }
+                });
+
+        parser.registerCommand("save-async", "Сохранить данные в файл в фоне",
+                (scanner, system) -> {
+                    String filename = ConsoleUtils.promptString(scanner, "Имя файла:", true);
+                    system.saveSnapshotAsync(filename);
+                    system.getAuditLog().log("SAVE_ASYNC", system.getCurrentUser(),
+                            filename, "background=true");
+                    System.out.println("✓ Сохранение запущено в фоне: " + filename);
                 });
 
         parser.registerCommand("help", "Справка по командам",
