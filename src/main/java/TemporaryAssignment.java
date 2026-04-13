@@ -9,6 +9,7 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
 
     private String expiresAt;
     private boolean autoRenew;
+    private boolean deactivated;
 
     public TemporaryAssignment(User user, Role role, AssignmentMetadata metadata,
                                String expiresAt, boolean autoRenew) {
@@ -23,11 +24,12 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
         }
         this.expiresAt = expiresAt;
         this.autoRenew = autoRenew;
+        this.deactivated = false;
     }
 
     @Override
     public boolean isActive() {
-        return !isExpired();
+        return !deactivated && !isExpired();
     }
 
     @Override
@@ -77,6 +79,14 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
 
     public boolean isAutoRenew() {
         return autoRenew;
+    }
+
+    public void deactivate() {
+        this.deactivated = true;
+    }
+
+    public boolean isDeactivated() {
+        return deactivated;
     }
 
     @Override
